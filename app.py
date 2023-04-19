@@ -7,7 +7,7 @@ app = Flask(__name__)
 CORS(app)
 
 # Configure MySQL database
-app.config['MYSQL_DATABASE_HOST'] = 'image-uploader-db-363215.c9mpzwnzbefb.us-east-1.rds.amazonaws.com'
+app.config['MYSQL_DATABASE_HOST'] = 'image-uploader-db-363215.cc1mavvnwdua.us-east-1.rds.amazonaws.com'
 app.config['MYSQL_DATABASE_USER'] = 'db_admin'
 app.config['MYSQL_DATABASE_PASSWORD'] = 'dbadmin363215'
 app.config['MYSQL_DATABASE_DB'] = 'mysql'
@@ -15,10 +15,18 @@ app.config['MYSQL_DATABASE_DB'] = 'mysql'
 mysql = MySQL()
 mysql.init_app(app)
 
+# s3 = boto3.client('s3', aws_access_key_id='AKIAYLNQSMB6S2HD5RSO',
+#                   aws_secret_access_key='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')
+
+
+
 # Configure AWS S3 bucket
-s3 = boto3.client('s3', aws_access_key_id='AKIAYLNQSMB6S2HD5RSO',
-                  aws_secret_access_key='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')
-bucket_name = 'image-uploader-app-363215'
+s3 = boto3.client('s3', aws_access_key_id='AKIA3KRWYUQJ656R5542',
+                  aws_secret_access_key='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')
+bucket_name = 'image-uploader-363215'
+
+
+
 
 def insert_new_user(username, password):
     return f"INSERT INTO CC.user_credentials (username, password, storage_used) VALUES ('{username}', '{password}', 0)"
@@ -102,11 +110,6 @@ def upload_image(username):
         
         filename = f"{username}/{image.filename}"
 
-        print(image)
-        print(size)
-        print(filename)
-        print(storage_used)
-
         s3.upload_fileobj(image, bucket_name, filename)
         signed_url = s3.generate_presigned_url(
                 ClientMethod='get_object',
@@ -117,7 +120,6 @@ def upload_image(username):
                 ExpiresIn=2592000
             )
 
-        print(signed_url)
         cursor.execute(insert_user_data(username, signed_url, size))
         cursor.execute(update_storage_used(storage_used,username))
         mysql.get_db().commit()
@@ -146,9 +148,7 @@ def get_user_info(username):
 
 @app.route('/<username>/images/<id>', methods=['DELETE'])
 def delete_image(username, id):
-    print(username)
-    print(int(id))
-    
+
     cursor = mysql.get_db().cursor()
 
     cursor.execute(get_image_by_id(username, id))
